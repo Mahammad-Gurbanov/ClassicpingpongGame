@@ -173,6 +173,22 @@ def move_right_paddle(key_pressed, right_paddle) -> None:
         right_paddle.x -= PADDLE_VEL
 
 
+def pause_game() -> None:
+    """
+    A function to pause the game, when the mouse is clicked.
+    :return: None
+    """
+    paused: bool = True
+    while paused:
+        # Handling events, to prevent other events from moving the paddles,
+        # and breaking the paused state
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                paused = False
+
+
 # Making Sure that the game window is there, by creating the infinite loop
 def main() -> None:
     """
@@ -187,6 +203,7 @@ def main() -> None:
 
     running = True
     while running:
+        click_counter: int = 0
         # Defining a speed in which the game is running (e.g. the frames
         # drawn each second)
         delay = pygame.time.Clock() # Creating a clock object
@@ -197,6 +214,10 @@ def main() -> None:
             # Event for quiting py game
             if event.type == pygame.QUIT:
                 running = False # making sure that you can leave the loop
+            # Increasing the num_mouse_pressed for using at to pause and play
+            # game
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pause_game()
 
         # Getting all the pressed keys, so you can add functionality to them
         key_pressed = pygame.key.get_pressed()
