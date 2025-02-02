@@ -1,5 +1,6 @@
 import pygame
 from random import randint
+import math
 
 # initializing pygame, without this the game won't open
 pygame.init()
@@ -62,9 +63,6 @@ PADDLE_CENTER_Y = (HEIGHT - PADDLE_HEIGHT)//2
 PADDLE = pygame.transform.scale(PADDLE, (PADDLE_WIDTH, PADDLE_HEIGHT))
 BALL = pygame.transform.scale(BALL, (BALL_WIDTH, BALL_HEIGHT))
 
-# SPECIAL EVENTS
-START_ROUND = pygame.USEREVENT + 1
-
 
 def draw_window(color: tuple, left_paddle: pygame.Rect,
                 right_paddle: pygame.Rect, ball: pygame.Rect) -> None:
@@ -108,7 +106,6 @@ def draw_window(color: tuple, left_paddle: pygame.Rect,
 
     # updates the python display, basically drawing new stuf
     pygame.display.update()
-
 
 
 def move_left_paddle(key_pressed, left_paddle: pygame.Rect) -> None:
@@ -189,6 +186,55 @@ def pause_game() -> None:
                 paused = False
 
 
+def random_degree() -> float:
+    """
+    Returns a random degree, in radians. The domain of the degree is [0, 360]
+    :return: A float which contains the randomly chosen x degree with radians.
+    :rtype: float
+    """
+    deg = randint(0, 360)
+    return math.radians(deg)
+
+
+def move_direction(deg: float, distance: int) -> tuple[int, int]:
+    """
+    Computes the movement in the x and y directions based on given angles
+    and a specified distance.
+    The function uses the sine and cosine of the given angle (in radians)
+    to determine how much the object should move along the x and y axes.
+    :param deg: Angle (in radians) used to compute horizontal displacement
+    as cos(x) * distance, and vertical displacement as sin(x) * distance.
+    :param distance: The amount of distance defined to move the object
+    :return: A tuple (length_x, length_y) representing the movement along the x
+    and y axes.
+    """
+    length_x = (distance * math.cos(deg))//1
+    length_y = (distance * math.sin(deg))//1
+    # Making sure the ball just doesn't move horizontally as cos(x) can be 0.
+    # Which will result in no vertical movement
+    if length_x == 0:
+        length_x = length_y = (distance/math.sqrt(2))//1
+    return int(length_x), int(length_y)
+
+
+def random_ball_movement(ball: pygame.Rect, x: float, distance: int) -> None:
+    """
+    This function will move the ball (Rect object) simultaneously in random
+    vertical and horizontal, directions. It uses move_direction function to
+    determine in which direction to move the ball.
+
+    :param ball: A rectangle object which models the ball
+    :param x: Angle (in radians) used to compute horizontal and vertical
+    displacement within the function move_direction()
+    :param distance: The amount of distance defined to move object. It's used
+    inside the move_direction() function
+    :return: None
+    """
+    direct_x, direct_y = move_direction(x, distance)
+    ball.x += direct_x
+    ball.y += direct_y
+
+
 # Making Sure that the game window is there, by creating the infinite loop
 def main() -> None:
     """
@@ -201,9 +247,13 @@ def main() -> None:
     right_paddle = pygame.Rect(700, PADDLE_CENTER_Y, PADDLE_WIDTH, PADDLE_HEIGHT)
     ball = pygame.Rect(BALL_CENTER_X, BALL_CENTER_Y, BALL_WIDTH, BALL_HEIGHT)
 
-    running = True
+    click_counter: int = 0
+    running: bool = True
+
+    # Defining x and y, so I can use these variables later
+    x: None = None
     while running:
-        click_counter: int = 0
+
         # Defining a speed in which the game is running (e.g. the frames
         # drawn each second)
         delay = pygame.time.Clock() # Creating a clock object
@@ -217,7 +267,13 @@ def main() -> None:
             # Increasing the num_mouse_pressed for using at to pause and play
             # game
             if event.type == pygame.MOUSEBUTTONDOWN:
-                pause_game()
+                click_counter += 1
+                if click_counter == 1:
+                    # Generating random x and y degrees to move the ball
+                    # randomly when the game begins
+                    x: float = random_degree()
+                else:
+                    pause_game()
 
         # Getting all the pressed keys, so you can add functionality to them
         key_pressed = pygame.key.get_pressed()
@@ -228,6 +284,13 @@ def main() -> None:
         # events)
         move_left_paddle(key_pressed, left_paddle)
         move_right_paddle(key_pressed, right_paddle)
+
+        # Changing the x, y coordinates of the ball
+        # For now this will move the ball in the same direction, since the
+        # beginning of the game because I haven't added collision and other
+        # stuff yet.
+        if click_counter:
+            random_ball_movement(ball, x, BALL_VEL)
 
         draw_window(DARK_BLUE, left_paddle, right_paddle, ball)
 
